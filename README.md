@@ -1,5 +1,6 @@
-# RetroMCP-Java
+# RetroMCP-Java-Hmod
 
+RetroMCP-Java-Hmod is a modified version of RetroMCP which will try to make development of HMOD plugins easier for those who have no experience
 RetroMCP is a modification of the Minecraft Coder Pack to create a "Long Term Service" patch for Minecraft.
 RetroMCP-Java is a complete re-design of RetroMCP in Java.
 
