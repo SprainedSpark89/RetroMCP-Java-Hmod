@@ -17,7 +17,7 @@ import org.mcphackers.mcp.tools.Util;
 
 public class TaskDownloadUpdate extends TaskStaged {
 
-	private static final String API = "https://api.github.com/repos/MCPHackers/RetroMCP-Java/releases/latest";
+	private static final String API = "https://api.github.com/repos/SprainedSpark89/RetroMCP-Java-Hmod/releases/latest";
 
 	public TaskDownloadUpdate(MCP instance) {
 		super(Side.ANY, instance);
