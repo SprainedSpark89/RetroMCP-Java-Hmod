@@ -21,6 +21,7 @@ import org.mcphackers.mcp.tasks.TaskRecompile;
 import org.mcphackers.mcp.tasks.TaskReobfuscate;
 import org.mcphackers.mcp.tasks.TaskRun;
 import org.mcphackers.mcp.tasks.TaskSetup;
+import org.mcphackers.mcp.tasks.TaskSetupHmod;
 import org.mcphackers.mcp.tasks.TaskSourceBackup;
 import org.mcphackers.mcp.tasks.TaskUpdateMD5;
 
@@ -103,6 +104,11 @@ public class TaskMode {
 	public static TaskMode SETUP = new TaskModeBuilder()
 			.setName("setup")
 			.setTaskClass(TaskSetup.class)
+			.build();
+	
+	public static TaskMode SETUPH = new TaskModeBuilder()
+			.setName("setupH")
+			.setTaskClass(TaskSetupHmod.class)
 			.build();
 	public static TaskMode CLEANUP = new TaskModeBuilder()
 			.setName("cleanup")

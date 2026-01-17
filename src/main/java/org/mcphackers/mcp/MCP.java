@@ -226,6 +226,8 @@ public abstract class MCP {
 	 * Sets current version from parsed JSON data
 	 */
 	public abstract void setCurrentVersion(Version version);
+	
+	public abstract void setCurrentHMODVersion(Version version);
 
 	/**
 	 * Sets display string for progress bar at specified barIndex
@@ -356,7 +358,7 @@ public abstract class MCP {
 		}
 	}
 
-	public VersionParser getVersionParser() {
+	public static VersionParser getVersionParser() {
 		return VERSION_PARSER;
 	}
 
@@ -366,5 +368,15 @@ public abstract class MCP {
 
 	public static void reloadPluginTranslations() {
 		pluginManager.getLoadedPlugins().forEach((key, plugin) -> MCP.TRANSLATOR.readTranslation(plugin.getClass()));
+	}
+
+	public Version getCurrentHMODVersion() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public String selectCompatibleVersion(String title, String msg) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

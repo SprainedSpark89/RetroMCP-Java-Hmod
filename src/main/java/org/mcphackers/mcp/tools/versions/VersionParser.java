@@ -26,10 +26,12 @@ public class VersionParser {
 	public static String mappingsJson = DEFAULT_JSON;
 
 	private final Map<String, VersionData> versions = new HashMap<>();
+	private final Map<String, VersionData> hmodVersions = new HashMap<>();
 	public Exception failureCause;
 
 	public VersionParser() {
 		this.addVersionsFromURL(mappingsJson);
+		this.addHmodFromURL("https://raw.githubusercontent.com/SprainedSpark89/MCPHackers.github.io/main/versionsHmod/versions.json");
 	}
 
 	public void addVersionsFromURL(String url) {
@@ -47,6 +49,28 @@ public class VersionParser {
 			try {
 				VersionData data = VersionData.from((JSONObject) j);
 				versions.put(data.id, data);
+			} catch (Exception e) {
+				// Catching exception will skip to the next version
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void addHmodFromURL(String url) {
+		JSONArray json;
+		try {
+			json = getJson(url);
+		} catch (Exception e) {
+			failureCause = e;
+			return; // Couldn't init json
+		}
+		for (Object j : json) {
+			if (!(j instanceof JSONObject)) {
+				continue;
+			}
+			try {
+				VersionData data = VersionData.from((JSONObject) j);
+				hmodVersions.put(data.id, data);
 			} catch (Exception e) {
 				// Catching exception will skip to the next version
 				e.printStackTrace();
@@ -76,6 +100,10 @@ public class VersionParser {
 	public VersionData getVersion(String id) {
 		return versions.getOrDefault(id, null);
 	}
+	
+	public VersionData getHmodVersion(String id) {
+		return hmodVersions.getOrDefault(id, null);
+	}
 
 	/**
 	 * @return All sorted VersionData
@@ -92,6 +120,12 @@ public class VersionParser {
 		sortedVersions.sort(new VersionSorter());
 		return sortedVersions;
 	}
+	
+	public List<VersionData> getSortedHmodVersions() {
+		List<VersionData> sortedVersions = new ArrayList<>(hmodVersions.values());
+		sortedVersions.sort(new VersionSorter());
+		return sortedVersions;
+	}
 
 	public static class VersionData extends VersionMetadata {
 		public String resources;
@@ -102,12 +136,17 @@ public class VersionParser {
 			}
 			return new VersionData() {
 				{
-					id = obj.getString("id");
-					time = obj.getString("time");
-					releaseTime = obj.getString("releaseTime");
-					type = obj.getString("type");
-					url = obj.getString("url");
-					resources = obj.optString("resources", null);
+					id = obj.optString("id", null);
+			        time = obj.optString("time", null);
+			        releaseTime = obj.optString("releaseTime", null);
+			        type = obj.optString("type", null);
+			        url = obj.optString("url", null);
+
+			        // New optional fields
+			        range = obj.optString("range", null);
+			        serverVersions = readStringArray(obj, "serverVersions");
+			        gameVersions = readStringArray(obj, "gameVersions");
+
 				}
 			};
 		}

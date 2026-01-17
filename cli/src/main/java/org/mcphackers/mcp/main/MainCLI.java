@@ -42,6 +42,7 @@ public class MainCLI extends MCP {
 	private Side side = Side.ANY;
 	private TaskMode helpCommand;
 	private Version currentVersion;
+	private Version currentHmodVersion;
 
 	private int[] progresses;
 	private String[] progressStrings;
@@ -348,6 +349,16 @@ public class MainCLI extends MCP {
 	@Override
 	public void setCurrentVersion(Version version) {
 		currentVersion = version;
+	}
+	
+	@Override
+	public Version getCurrentHMODVersion() {
+		return currentHmodVersion;
+	}
+
+	@Override
+	public void setCurrentHMODVersion(Version version) {
+		currentHmodVersion = version;
 	}
 
 	@Override

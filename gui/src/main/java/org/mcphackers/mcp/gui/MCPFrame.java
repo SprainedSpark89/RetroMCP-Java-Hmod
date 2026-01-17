@@ -52,6 +52,7 @@ public class MCPFrame extends JFrame implements WindowListener {
 	public MenuBar menuBar;
 	public boolean loadingVersions = true;
 	private JComboBox<?> verList;
+	private JComboBox<?> hmodList;
 	private JLabel verLabel;
 	//private JButton verCleanup;
 	private JPanel topRightContainer;
@@ -131,11 +132,14 @@ public class MCPFrame extends JFrame implements WindowListener {
 	public void reloadVersionList() {
 		verLabel = new JLabel(MCP.TRANSLATOR.translateKey("mcp.versionList.currentVersion"));
 		verList = new JComboBox<Object>(new String[]{MCP.TRANSLATOR.translateKey("mcp.versionList.loading")});
+		hmodList = new JComboBox<Object>(new String[]{MCP.TRANSLATOR.translateKey("mcp.versionList.loading")});
 		verLabel.setEnabled(false);
 		verList.setEnabled(false);
+		hmodList.setEnabled(false);
 		topRightContainer.removeAll();
 		topRightContainer.add(this.verLabel);
 		topRightContainer.add(this.verList);
+		topRightContainer.add(this.hmodList);
 		AtomicReference<JButton> reloadVersionListButton = new AtomicReference<>();
 		enqueueRunnable(() -> {
 			loadingVersions = true;
@@ -170,11 +174,33 @@ public class MCPFrame extends JFrame implements WindowListener {
 				setCurrentVersion(mcp.currentVersion == null ? null : versionParser.getVersion(mcp.currentVersion.id));
 				verList.setMaximumRowCount(20);
 				verLabel = new JLabel(MCP.TRANSLATOR.translateKey("mcp.versionList.currentVersion"));
+				
+				//hmod
+				hmodList = new JComboBox<>(versionParser.getSortedHmodVersions().toArray());
+				hmodList.addPopupMenuListener(new PopupMenuListener() {
+
+					@Override
+					public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+					}
+
+					@Override
+					public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+						enqueueRunnable(() -> mcp.setupHmod((VersionData) hmodList.getSelectedItem()));
+					}
+
+					@Override
+					public void popupMenuCanceled(PopupMenuEvent e) {
+					}
+				});
+
+				setCurrentHMODVersion(mcp.currentHmodVersion == null ? null : versionParser.getVersion(mcp.currentHmodVersion.id));
+				hmodList.setMaximumRowCount(20);
 			}
 			topRightContainer.removeAll();
 			topRightContainer.add(this.verLabel);
 			if (verList != null) {
 				topRightContainer.add(this.verList);
+				topRightContainer.add(this.hmodList);
 			} else if (reloadVersionListButton.get() != null) {
 				JButton reloadButton = reloadVersionListButton.get();
 				topRightContainer.add(reloadButton);
@@ -182,8 +208,8 @@ public class MCPFrame extends JFrame implements WindowListener {
 			loadingVersions = false;
 			synchronized (mcp) {
 				if (mcp.isActive) {
-					if (verList != null) verList.setEnabled(true);
-					verLabel.setEnabled(true);
+					if (verList != null) verList.setEnabled(true); hmodList.setEnabled(true);
+					verLabel.setEnabled(true); hmodList.setEnabled(true);
 				}
 			}
 
@@ -236,6 +262,14 @@ public class MCPFrame extends JFrame implements WindowListener {
 		}
 		verList.setSelectedItem(versionData);
 		verList.repaint();
+	}
+	
+	public void setCurrentHMODVersion(VersionData versionData) {
+		if (hmodList == null) {
+			return;
+		}
+		hmodList.setSelectedItem(versionData);
+		hmodList.repaint();
 	}
 
 	/**

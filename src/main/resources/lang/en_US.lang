@@ -34,6 +34,7 @@ side.client = Client
 side.server = Server
 side.merged = Merged
 side.any = Any
+side.mod = Hey0's Mod
 
 options = Options
 options.language = Language
@@ -54,6 +55,8 @@ task.help = Help
 task.help.desc = Displays command usage
 task.setup = Setup
 task.setup.desc = Set initial workspace for a version
+task.setupH = Hey0's Mod Setup
+task.setup.desc = Set initial workspace for an Hmod version
 task.setup.selectVersion = Select version:
 task.decompile = Decompile
 task.decompile.desc = Start decompiling Minecraft

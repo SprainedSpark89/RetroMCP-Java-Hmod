@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BoxLayout;
@@ -62,6 +63,7 @@ public class MainGUI extends MCP {
 			{TaskParameter.SOURCE_VERSION, TaskParameter.TARGET_VERSION, TaskParameter.JAVA_HOME, TaskParameter.JAVAC_ARGS}, {TaskParameter.OBFUSCATION, TaskParameter.SRG_OBFUSCATION, TaskParameter.EXCLUDED_CLASSES, TaskParameter.STRIP_SOURCE_FILE},
 			{TaskParameter.FULL_BUILD}, {TaskParameter.RUN_BUILD, TaskParameter.RUN_ARGS, TaskParameter.GAME_ARGS}
 	};
+	public Version currentHmodVersion;
 	public Theme theme = Theme.THEMES_MAP.get(UIManager.getCrossPlatformLookAndFeelClassName());
 	public MCPFrame frame;
 	public boolean isActive = true;
@@ -159,6 +161,17 @@ public class MainGUI extends MCP {
 		currentVersion = version;
 		frame.setCurrentVersion(version == null ? null : this.getVersionParser().getVersion(version.id));
 	}
+	
+	@Override
+	public Version getCurrentHMODVersion() {
+		return currentHmodVersion;
+	}
+
+	@Override
+	public void setCurrentHMODVersion(Version version) {
+		currentHmodVersion = version;
+		frame.setCurrentHMODVersion(version == null ? null : this.getVersionParser().getVersion(version.id));
+	}
 
 	@Override
 	public void log(String msg) {
@@ -195,6 +208,33 @@ public class MainGUI extends MCP {
 	public String inputString(String title, String msg) {
 		frame.setState(Frame.NORMAL);
 		return JOptionPane.showInputDialog(frame, msg, title, JOptionPane.PLAIN_MESSAGE);
+	}
+	
+	@Override
+	public String selectCompatibleVersion(String title, String msg) {
+		frame.setState(Frame.NORMAL);
+		List<String> options = new ArrayList<String>();
+		VersionData hmodData = hmodVerData;
+		for(VersionData data : MCP.getVersionParser().getSortedVersions()) {
+			for(String ver : hmodData.gameVersions) {
+				if(data.id.contentEquals(ver)) {
+					options.add(data.id);
+				}
+			}
+			
+		}
+		Object selection = JOptionPane.showInputDialog(frame, msg, title, JOptionPane.QUESTION_MESSAGE, null, options.toArray(), null);
+		return selection instanceof String ? (String) selection : null;
+	}
+	
+	public VersionData getDataFromID(String id) {
+		List<VersionData> metaData = MCP.getVersionParser().getSortedHmodVersions();
+		for(VersionData data : metaData) {
+			if(data.id.contentEquals(id)) {
+				return data;
+			}
+		}
+		return null;
 	}
 
 	@SuppressWarnings("MagicConstant")
@@ -323,6 +363,22 @@ public class MainGUI extends MCP {
 				performTask(TaskMode.SETUP, Side.ANY);
 			} else {
 				frame.setCurrentVersion(versionParser.getVersion(version == null ? null : version.id));
+			}
+		}
+	}
+	
+	public VersionData hmodVerData;
+	public void setupHmod(VersionData versionData) {
+		hmodVerData = versionData;
+		VersionParser versionParser = this.getVersionParser();
+		Version version = getCurrentHMODVersion();
+		if (versionData != null && !versionData.equals(version == null ? null : versionParser.getHmodVersion(version.id))) {
+			int response = JOptionPane.showConfirmDialog(frame, MCP.TRANSLATOR.translateKey("mcp.confirmSetup"), MCP.TRANSLATOR.translateKey("mcp.confirmAction"), JOptionPane.YES_NO_OPTION);
+			if (response == JOptionPane.YES_OPTION) {
+				setParameter(TaskParameter.SETUP_HMOD, versionData.id);
+				performTask(TaskMode.SETUPH, Side.HMOD);
+			} else {
+				frame.setCurrentVersion(versionParser.getHmodVersion(version == null ? null : version.id));
 			}
 		}
 	}
