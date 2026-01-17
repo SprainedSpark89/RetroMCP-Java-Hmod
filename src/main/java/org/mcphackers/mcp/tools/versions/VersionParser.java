@@ -22,7 +22,7 @@ import org.mcphackers.mcp.tools.versions.json.VersionMetadata;
 
 public class VersionParser {
 
-	public static final String DEFAULT_JSON = "https://mcphackers.org/versionsV3/versions.json";
+	public static final String DEFAULT_JSON = "https://raw.githubusercontent.com/SprainedSpark89/MCPHackers.github.io/main/versionsV3/versions.json";
 	public static String mappingsJson = DEFAULT_JSON;
 
 	private final Map<String, VersionData> versions = new HashMap<>();
