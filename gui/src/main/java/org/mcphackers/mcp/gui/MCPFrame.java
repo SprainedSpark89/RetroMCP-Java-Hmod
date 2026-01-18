@@ -9,6 +9,7 @@ import org.mcphackers.mcp.tasks.Task.Side;
 import org.mcphackers.mcp.tasks.mode.TaskMode;
 import org.mcphackers.mcp.tools.versions.VersionParser;
 import org.mcphackers.mcp.tools.versions.VersionParser.VersionData;
+import org.json.JSONObject;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -23,6 +24,8 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -176,7 +179,8 @@ public class MCPFrame extends JFrame implements WindowListener {
 				verLabel = new JLabel(MCP.TRANSLATOR.translateKey("mcp.versionList.currentVersion"));
 				
 				//hmod
-				hmodList = new JComboBox<>(versionParser.getSortedHmodVersions().toArray());
+				VersionData[] hmodArray = versionParser.getSortedHmodVersions().toArray(new VersionData[0]);
+				hmodList = new JComboBox<>(hmodArray);
 				hmodList.addPopupMenuListener(new PopupMenuListener() {
 
 					@Override
@@ -193,7 +197,134 @@ public class MCPFrame extends JFrame implements WindowListener {
 					}
 				});
 
-				setCurrentHMODVersion(mcp.currentHmodVersion == null ? null : versionParser.getVersion(mcp.currentHmodVersion.id));
+				// Select saved/current HMOD by matching ids (robust against object identity differences)
+				String desiredId = null;
+				// 1) from mcp.currentHmodVersion
+				if (mcp.currentHmodVersion != null && mcp.currentHmodVersion.id != null) {
+					desiredId = mcp.currentHmodVersion.id;
+				}
+				// 2) fallback to options value
+				if (desiredId == null) {
+					try {
+						String opt = mcp.getOptions().getStringParameter(org.mcphackers.mcp.tasks.mode.TaskParameter.SETUP_HMOD);
+						if (opt != null && !opt.isEmpty()) desiredId = opt;
+					} catch (Exception ignored) {}
+				}
+				// 3) fallback to reading hmod.json id directly
+				if (desiredId == null) {
+					try {
+						Path hmodPath = MCPPaths.get(mcp, MCPPaths.HMOD);
+						if (Files.exists(hmodPath)) {
+							JSONObject obj = new JSONObject(new String(Files.readAllBytes(hmodPath)));
+							String id = obj.optString("id", null);
+							if (id != null && !id.isEmpty()) desiredId = id;
+						}
+					} catch (Exception ignored) {}
+				}
+				if (desiredId != null) {
+					// Debug logging commented out to avoid cluttering the GUI console
+					// mcp.log("HMOD desired id: " + desiredId);
+					String normDesired = desiredId.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+					String digitsDesired = desiredId.replaceAll("\\D", "");
+					// mcp.log("HMOD desired normalized: " + normDesired + " digits: " + digitsDesired);
+					// try exact match first
+					boolean matched = false;
+					for (int i = 0; i < hmodArray.length; i++) {
+						String id = hmodArray[i] == null || hmodArray[i].id == null ? "" : hmodArray[i].id;
+						String norm = id.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+						String digits = id.replaceAll("\\D", "");
+						// mcp.log(String.format("HMOD candidate[%d]: id='%s' norm='%s' digits='%s'", i, id, norm, digits));
+						if (id.equals(desiredId) || id.equalsIgnoreCase(desiredId)) {
+							final int idx = i;
+							final String selId = id;
+							SwingUtilities.invokeLater(() -> {
+								hmodList.setSelectedIndex(idx);
+								try { org.mcphackers.mcp.tools.versions.json.Version v = new org.mcphackers.mcp.tools.versions.json.Version(); v.id = selId; mcp.setCurrentHMODVersion(v); } catch (Exception ignored) {}
+							});
+							matched = true;
+							break;
+						}
+					}
+					// helper to perform selection when match found
+					if (!matched) {
+						// try normalized match (remove spaces/underscores and case)
+						for (int i = 0; i < hmodArray.length; i++) {
+							String id = hmodArray[i] == null || hmodArray[i].id == null ? "" : hmodArray[i].id;
+							String norm = id.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+							if (!normDesired.isEmpty() && norm.equals(normDesired)) {
+								final int idx = i;
+								final String selId = hmodArray[i].id;
+								SwingUtilities.invokeLater(() -> {
+									hmodList.setSelectedIndex(idx);
+									try { org.mcphackers.mcp.tools.versions.json.Version v = new org.mcphackers.mcp.tools.versions.json.Version(); v.id = selId; mcp.setCurrentHMODVersion(v); } catch (Exception ignored) {}
+								});
+								matched = true;
+								break;
+							}
+						}
+					}
+					if (!matched && !digitsDesired.isEmpty()) {
+						// try numeric-part match
+						for (int i = 0; i < hmodArray.length; i++) {
+							String id = hmodArray[i] == null || hmodArray[i].id == null ? "" : hmodArray[i].id;
+							String digits = id.replaceAll("\\D", "");
+							if (!digits.isEmpty() && digits.equals(digitsDesired)) {
+								final int idx = i;
+								final String selId = hmodArray[i].id;
+								SwingUtilities.invokeLater(() -> {
+									hmodList.setSelectedIndex(idx);
+									try { org.mcphackers.mcp.tools.versions.json.Version v = new org.mcphackers.mcp.tools.versions.json.Version(); v.id = selId; mcp.setCurrentHMODVersion(v); } catch (Exception ignored) {}
+								});
+								matched = true;
+								break;
+							}
+						}
+					}
+					if (!matched) {
+						// try variants: if desired is numeric, try with 'hmod' prefix; if has 'hmod' with space, try without
+						List<String> variants = new ArrayList<>();
+						if (!digitsDesired.isEmpty()) {
+							variants.add("hmod" + digitsDesired);
+							variants.add("hmod " + digitsDesired);
+						}
+						if (desiredId.toLowerCase().startsWith("hmod ")) {
+							variants.add(desiredId.toLowerCase().replace("hmod ", "hmod"));
+						}
+						for (String vstr : variants) {
+							String normV = vstr.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+							for (int i = 0; i < hmodArray.length; i++) {
+								String id = hmodArray[i] == null || hmodArray[i].id == null ? "" : hmodArray[i].id;
+								String norm = id.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+								if (!normV.isEmpty() && norm.equals(normV)) {
+									final int idx = i;
+									final String selId = hmodArray[i].id;
+									SwingUtilities.invokeLater(() -> {
+										hmodList.setSelectedIndex(idx);
+										try { org.mcphackers.mcp.tools.versions.json.Version vv = new org.mcphackers.mcp.tools.versions.json.Version(); vv.id = selId; mcp.setCurrentHMODVersion(vv); } catch (Exception ignored) {}
+									});
+									matched = true;
+									break;
+								}
+							}
+							if (matched) break;
+						}
+					}
+					if (!matched) {
+						// try contains (fallback)
+						for (int i = 0; i < hmodArray.length; i++) {
+							String id = hmodArray[i] == null || hmodArray[i].id == null ? "" : hmodArray[i].id;
+							if (id.contains(desiredId) || id.toLowerCase().contains(desiredId.toLowerCase())) {
+								final int idx = i;
+								final String selId = hmodArray[i].id;
+								SwingUtilities.invokeLater(() -> {
+									hmodList.setSelectedIndex(idx);
+									try { org.mcphackers.mcp.tools.versions.json.Version v = new org.mcphackers.mcp.tools.versions.json.Version(); v.id = selId; mcp.setCurrentHMODVersion(v); } catch (Exception ignored) {}
+								});
+								break;
+							}
+						}
+					}
+				}
 				hmodList.setMaximumRowCount(20);
 			}
 			topRightContainer.removeAll();
@@ -225,7 +356,7 @@ public class MCPFrame extends JFrame implements WindowListener {
 				revalidate();
 				topLeftContainer.revalidate();
 			}
-			setVisible(true);
+		 setVisible(true);
 		});
 	}
 

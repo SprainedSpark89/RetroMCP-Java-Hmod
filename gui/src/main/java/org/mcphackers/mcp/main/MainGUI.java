@@ -13,6 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -109,11 +111,38 @@ public class MainGUI extends MCP {
 				e.printStackTrace();
 			}
 		}
+		Path hmodPath = MCPPaths.get(this, MCPPaths.HMOD);
+		if (Files.exists(hmodPath)) {
+			try {
+				// Read only the id field so we don't require the full Version JSON shape
+				JSONObject obj = new JSONObject(new String(Files.readAllBytes(hmodPath)));
+				String id = obj.optString("id", null);
+				if (id != null && !id.isEmpty()) {
+					currentHmodVersion = new Version();
+					currentHmodVersion.id = id;
+				}
+			} catch (JSONException | IOException e) {
+				e.printStackTrace();
+			}
+		}
 		if (!VersionParser.mappingsJson.equals(VersionParser.DEFAULT_JSON)) {
 			warning("Using old or third party manifest URL: " + VersionParser.mappingsJson);
 			warning("If this is not intentional, please update versionUrl in options.cfg to " + VersionParser.DEFAULT_JSON);
 		}
 		frame = new MCPFrame(this);
+		// Prefer the id from the HMOD file; if none, fall back to saved options
+		try {
+			String optHmod = this.options.getStringParameter(TaskParameter.SETUP_HMOD);
+			if (currentHmodVersion == null && optHmod != null && !optHmod.isEmpty()) {
+				Version v = new Version();
+				v.id = optHmod;
+				// Do NOT call setCurrentHMODVersion here to avoid racing with MCPFrame.reloadVersionList which
+				// repopulates and selects items asynchronously; just set the field and let MCPFrame pick it up.
+				currentHmodVersion = v;
+			}
+		} catch (Exception ignored) {
+			// leave currentHmodVersion as read from file if present
+		}
 		if (Util.getJavaVersion(this) > 8) {
 			warning("JDK " + Util.getJavaVersion(this) + " is being used! Java 8 is recommended.");
 		}
@@ -170,7 +199,30 @@ public class MainGUI extends MCP {
 	@Override
 	public void setCurrentHMODVersion(Version version) {
 		currentHmodVersion = version;
-		frame.setCurrentHMODVersion(version == null ? null : this.getVersionParser().getHmodVersion(version.id));
+		// Update GUI selection (use VersionData if available)
+		VersionParser versionParser = this.getVersionParser();
+		VersionData data = null;
+		if (version != null && version.id != null) {
+			data = versionParser.getHmodVersion(version.id);
+		}
+		frame.setCurrentHMODVersion(data);
+		// Persist selection to options and to MCPPaths.HMOD
+		try {
+			if (version != null && version.id != null) {
+				// Save id in options and write minimal JSON file
+				setParameter(TaskParameter.SETUP_HMOD, version.id);
+				Path hmodPath = MCPPaths.get(this, MCPPaths.HMOD);
+				if (hmodPath.getParent() != null) Files.createDirectories(hmodPath.getParent());
+				String json = "{\"id\":\"" + version.id + "\"}";
+				Files.write(hmodPath, json.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+			} else {
+				// Clear option and delete file
+				setParameter(TaskParameter.SETUP_HMOD, null);
+				try { Files.deleteIfExists(MCPPaths.get(this, MCPPaths.HMOD)); } catch (IOException ignored) {}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -333,7 +385,17 @@ public class MainGUI extends MCP {
 						e.printStackTrace();
 					}
 				}
+				Path hmodPath = MCPPaths.get(this, MCPPaths.HMOD);
+				if (Files.exists(hmodPath)) {
+					try {
+						currentHmodVersion = Version.from(new JSONObject(new String(Files.readAllBytes(hmodPath))));
+					} catch (JSONException | IOException e) {
+						e.printStackTrace();
+					}
+				}
 				this.frame.setCurrentVersion(this.currentVersion == null ? null : versionParser.getVersion(this.currentVersion.id));
+				this.frame.setCurrentHMODVersion(this.currentHmodVersion == null ? null : versionParser.getHmodVersion(this.currentHmodVersion.id));
+				this.frame.setCurrentHMODVersion(this.currentHmodVersion == null ? null : versionParser.getHmodVersion(this.options.getStringParameter(TaskParameter.SETUP_HMOD)));
 				this.frame.reloadText();
 				this.frame.reloadVersionList();
 				this.frame.updateButtonState();

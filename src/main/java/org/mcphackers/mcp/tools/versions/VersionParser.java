@@ -123,7 +123,7 @@ public class VersionParser {
 	
 	public List<VersionData> getSortedHmodVersions() {
 		List<VersionData> sortedVersions = new ArrayList<>(hmodVersions.values());
-		sortedVersions.sort(new VersionSorter());
+		sortedVersions.sort(new HMODSorter());
 		return sortedVersions;
 	}
 
@@ -192,6 +192,20 @@ public class VersionParser {
 				Instant i1 = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(t1.releaseTime));
 				Instant i2 = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(t2.releaseTime));
 				return i2.compareTo(i1);
+			} catch (Exception e) {
+				return -1;
+			}
+		}
+	}
+	
+	public static class HMODSorter implements Comparator<VersionData> {
+
+		@Override
+		public int compare(VersionData t1, VersionData t2) {
+			try {
+				int i1 = Integer.parseInt(t1.releaseTime.replaceAll("[^0-9]", ""));
+				int i2 = Integer.parseInt(t2.releaseTime.replaceAll("[^0-9]", ""));
+				return Integer.compare(i1, i2);
 			} catch (Exception e) {
 				return -1;
 			}

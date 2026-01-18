@@ -3,8 +3,11 @@ package org.mcphackers.mcp.tasks;
 import static org.mcphackers.mcp.MCPPaths.*;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -31,7 +34,7 @@ public class TaskSetupHmod extends TaskStaged {
 	private long libsSize = 0;
 
 	public TaskSetupHmod(MCP instance) {
-		super(Side.HMOD, instance);
+		super(Side.ANY, instance);
 	}
 
 	@Override
@@ -154,9 +157,43 @@ public class TaskSetupHmod extends TaskStaged {
 					versionJson.arguments = vanilla.arguments;
 					versionJson.id = chosenVersion;
 					
+					if(!MCPPaths.get(mcp, MCPPaths.HMOD).toFile().exists()) {
+						MCPPaths.get(mcp, MCPPaths.HMOD).toFile().createNewFile();
+					}
+					
+					writeToFile(MCPPaths.get(mcp, MCPPaths.HMOD).toFile(), "{\n"
+							+ " \"assetIndex\": {\n"
+							+ "  \"id\": \"\",\n"
+							+ "  \"sha1\": \"\",\n"
+							+ "  \"size\": 0,\n"
+							+ "  \"totalSize\": 0,\n"
+							+ "  \"url\": \"\"\n"
+							+ " },\n"
+							+ " \"assets\": \"\",\n"
+							+ " \"downloads\": {},\n"
+							+ " \"id\": \""+ versionJson.id +"\",\n"
+							+ " \"time\": \"\",\n"
+							+ " \"releaseTime\": \"\",\n"
+							+ " \"type\": \"Hey0's Mod\",\n"
+							+ " \"libraries\":[],\n"
+							+ " \"mainClass\": \"Main\",\n"
+							+ " \"arguments\": {\n"
+							+ "  \"jvm\": [],\n"
+							+ "  \"game\": []\n"
+							+ " },\n"
+							+ " \"minecraftArguments\": \"\"\n"
+							+ "}");
+					
 					
 					mcp.setCurrentHMODVersion(versionJson);
 				})
 		};
+	}
+	
+	public static void writeToFile(File file, String writing) throws IOException { // something I wrote on April 30, 2025, 11:22 AM, and then pasted into a google doc for school
+		FileWriter fileWriter = new FileWriter(file); // makes an instance of a FileWriter
+		fileWriter.write(writing); // writes the text to the file
+		fileWriter.flush(); // returns the edits to the file
+		fileWriter.close(); // kills the instance
 	}
 }
