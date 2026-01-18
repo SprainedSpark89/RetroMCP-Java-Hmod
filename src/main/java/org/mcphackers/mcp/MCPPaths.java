@@ -40,7 +40,7 @@ public class MCPPaths {
 	public static final String CONF_PATCHES = CONF + "%s.patch";
 	public static final String PATCHES = "patches/%s.patch";
 	public static final String VERSION = CONF + "version.json";
-
+	public static final String DEFAULTHMOD = CONF + "HMOD/";
 
 	public static final String UPDATE_JAR = "update.jar";
 

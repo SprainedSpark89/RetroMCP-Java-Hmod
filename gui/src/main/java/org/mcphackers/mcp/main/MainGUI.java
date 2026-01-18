@@ -170,7 +170,7 @@ public class MainGUI extends MCP {
 	@Override
 	public void setCurrentHMODVersion(Version version) {
 		currentHmodVersion = version;
-		frame.setCurrentHMODVersion(version == null ? null : this.getVersionParser().getVersion(version.id));
+		frame.setCurrentHMODVersion(version == null ? null : this.getVersionParser().getHmodVersion(version.id));
 	}
 
 	@Override

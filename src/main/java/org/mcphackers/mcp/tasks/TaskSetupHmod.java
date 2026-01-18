@@ -3,6 +3,8 @@ package org.mcphackers.mcp.tasks;
 import static org.mcphackers.mcp.MCPPaths.*;
 
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -21,6 +23,7 @@ import org.mcphackers.mcp.tools.Util;
 import org.mcphackers.mcp.tools.versions.DownloadData;
 import org.mcphackers.mcp.tools.versions.VersionParser;
 import org.mcphackers.mcp.tools.versions.VersionParser.VersionData;
+import org.mcphackers.mcp.tools.versions.json.Classifiers;
 import org.mcphackers.mcp.tools.versions.json.Version;
 
 public class TaskSetupHmod extends TaskStaged {
@@ -113,42 +116,45 @@ public class TaskSetupHmod extends TaskStaged {
 					
 
 					
-					try {
-						versionStream = new URL(chosenVersionData.url).openStream();
+					/*try {
+						versionStream = new URL(chosenVersionData.url.replace(" ", "%20")).openStream();
 					} catch (MalformedURLException ex) {
-						versionStream = Files.newInputStream(MCPPaths.get(mcp, chosenVersionData.url));
+						versionStream = Files.newInputStream(MCPPaths.get(mcp, chosenVersionData.url.replace(" ", "%20")));
 					}
 					versionJsonObj = new JSONObject(new String(Util.readAllBytes(versionStream), StandardCharsets.UTF_8));
-					versionJson = Version.from(versionJsonObj);
-					FileUtil.createDirectories(MCPPaths.get(mcp, CONF));
+					versionJson = Version.from(versionJsonObj);*/
+					//FileUtil.createDirectories(MCPPaths.get(mcp, CONF));
 
-					if (chosenVersionData.resources != null) {
+					if (chosenVersionData.url != null) {
 						setProgress(getLocalizedStage("download", chosenVersionData.resources), 2);
 						try {
-							URL url = new URL(chosenVersionData.resources);
-							FileUtil.extract(url.openStream(), MCPPaths.get(mcp, CONF));
+							URL url = new URL(chosenVersionData.url.replace(" ", "%20"));
+							FileUtil.extract(url.openStream(), MCPPaths.get(mcp, DEFAULTHMOD));
 						} catch (MalformedURLException e) {
-							Path p = Paths.get(chosenVersionData.resources);
+							Path p = Paths.get(chosenVersionData.url.replace(" ", "%20"));
 							if (Files.exists(p)) {
 								FileUtil.extract(p, MCPPaths.get(mcp, CONF));
 							}
 						}
 					}
-
-					dlData = new DownloadData(mcp, versionJson);
-					dlData.performDownload((dl, totalSize) -> {
-						libsSize += dl.downloadSize();
-						int percent = (int) ((double) libsSize / totalSize * 97D);
-						setProgress(getLocalizedStage("download", dl.downloadURL()), 3 + percent);
-					});
+					
+					if(!MCPPaths.get(mcp, MCPPaths.JARS).toFile().exists()) {
+						MCPPaths.get(mcp, MCPPaths.JARS).toFile().mkdirs();
+					}
+					
+					try {
+						FileUtil.copyResource(new FileInputStream(MCPPaths.get(mcp, DEFAULTHMOD).toString() + "/bin/Minecraft_Mod.jar"), MCPPaths.get(mcp, JAR_ORIGINAL.replace("%s", "mod")));
+					} catch(FileNotFoundException e) {
+						FileUtil.copyResource(new FileInputStream(MCPPaths.get(mcp, DEFAULTHMOD).toString() + "/bin/Minecraft_mod.jar"), MCPPaths.get(mcp, JAR_ORIGINAL.replace("%s", "mod")));
+					}
+					
+					Version vanilla = versionJson;
+					
+					versionJson = new Version();
+					versionJson.arguments = vanilla.arguments;
+					versionJson.id = chosenVersion;
 					
 					
-					for (Path nativeArchive : DownloadData.getNatives(MCPPaths.get(mcp, LIB), versionJson)) {
-						FileUtil.extract(nativeArchive, natives);
-					}
-					try (BufferedWriter writer = Files.newBufferedWriter(MCPPaths.get(mcp, VERSION))) {
-						versionJsonObj.write(writer, 1, 0);
-					}
 					mcp.setCurrentHMODVersion(versionJson);
 				})
 		};
