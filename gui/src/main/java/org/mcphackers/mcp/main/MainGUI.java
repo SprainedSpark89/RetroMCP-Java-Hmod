@@ -438,7 +438,7 @@ public class MainGUI extends MCP {
 			int response = JOptionPane.showConfirmDialog(frame, MCP.TRANSLATOR.translateKey("mcp.confirmSetup"), MCP.TRANSLATOR.translateKey("mcp.confirmAction"), JOptionPane.YES_NO_OPTION);
 			if (response == JOptionPane.YES_OPTION) {
 				setParameter(TaskParameter.SETUP_HMOD, versionData.id);
-				performTask(TaskMode.SETUPH, Side.HMOD);
+				performTask(TaskMode.SETUPH, Side.ANY);
 			} else {
 				frame.setCurrentVersion(versionParser.getHmodVersion(version == null ? null : version.id));
 			}

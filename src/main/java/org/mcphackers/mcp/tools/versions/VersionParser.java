@@ -141,6 +141,7 @@ public class VersionParser {
 			        releaseTime = obj.optString("releaseTime", null);
 			        type = obj.optString("type", null);
 			        url = obj.optString("url", null);
+			        resources = obj.optString("resources", null);
 
 			        // New optional fields
 			        range = obj.optString("range", null);
