@@ -27,6 +27,7 @@ import org.mcphackers.mcp.tools.versions.json.Version.Arguments;
 public class TaskRun extends TaskStaged {
 
 	public static final List<String> SERVER_MAIN = Arrays.asList("net.minecraft.server.Main", "net.minecraft.server.MinecraftServer", "com.mojang.minecraft.server.MinecraftServer");
+	public static final List<String> HMOD_MAIN = Arrays.asList("Main");
 
 	public TaskRun(Side side, MCP instance) {
 		super(side, instance);
@@ -44,6 +45,21 @@ public class TaskRun extends TaskStaged {
 					if (zipEntry.getName().endsWith(".class")) {
 						String className = zipEntry.getName().substring(0, zipEntry.getName().length() - 6).replace('\\', '.').replace('/', '.');
 						if (SERVER_MAIN.contains(className)) {
+							return className;
+						}
+					}
+				}
+			}
+		}
+		
+		if (side == Side.HMOD) {
+			Path jarPath = MCPPaths.get(mcp, JAR_ORIGINAL, Side.HMOD);
+			try (ZipInputStream zipIn = new ZipInputStream(Files.newInputStream(jarPath))) {
+				ZipEntry zipEntry;
+				while ((zipEntry = zipIn.getNextEntry()) != null) {
+					if (zipEntry.getName().endsWith(".class")) {
+						String className = zipEntry.getName().substring(0, zipEntry.getName().length() - 6).replace('\\', '.').replace('/', '.');
+						if (HMOD_MAIN.contains(className)) {
 							return className;
 						}
 					}

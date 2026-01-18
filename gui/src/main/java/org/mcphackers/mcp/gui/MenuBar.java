@@ -36,6 +36,16 @@ public class MenuBar extends JMenuBar {
 	private final JMenuItem[] themeItems;
 	private final JMenuItem[] langItems;
 	private JMenuItem[] sideItems;
+	
+	public String sideString(Side side) {
+		if(side == Side.CLIENT) {
+			return "mcp.startClient";
+		} else if(side == Side.SERVER) {
+			return "mcp.startServer";
+		} else {
+			return "mcp.startHmod";
+		}
+	}
 
 	protected MenuBar(MCPFrame frame) {
 		owner = frame;
@@ -49,10 +59,10 @@ public class MenuBar extends JMenuBar {
 		JMenuItem update = new JMenuItem();
 		translatableComponents.put(update, "mcp.checkUpdate");
 		update.addActionListener(a -> enqueueRunnable(() -> mcp.performTask(TaskMode.UPDATE_MCP, Side.ANY, false)));
-		Side[] sides = {Side.CLIENT, Side.SERVER};
+		Side[] sides = {Side.CLIENT, Side.SERVER, Side.HMOD};
 		for (Side side : sides) {
 			JMenuItem start = new JMenuItem();
-			translatableComponents.put(start, side == Side.CLIENT ? "mcp.startClient" : "mcp.startServer");
+			translatableComponents.put(start, sideString(side));
 			togglableComponents.add(start);
 			start.addActionListener(a -> enqueueRunnable(() -> {
 				mcp.performTask(TaskMode.START, side, false);
@@ -88,7 +98,7 @@ public class MenuBar extends JMenuBar {
 		mcpMenu.add(changeDir);
 		List<TaskMode> usedTasks = new ArrayList<>();
 		usedTasks.addAll(Arrays.asList(MainGUI.TASKS));
-		usedTasks.addAll(Arrays.asList(TaskMode.UPDATE_MCP, TaskMode.START, TaskMode.EXIT, TaskMode.HELP, TaskMode.SETUP));
+		usedTasks.addAll(Arrays.asList(TaskMode.UPDATE_MCP, TaskMode.START, TaskMode.EXIT, TaskMode.HELP, TaskMode.SETUP, TaskMode.SETUPH));
 		JMenu moreTasks = new JMenu();
 		translatableComponents.put(moreTasks, "mcp.moreTasks");
 		togglableComponents.add(moreTasks);

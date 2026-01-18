@@ -39,16 +39,27 @@ public class TaskDecompile extends TaskStaged {
 	public TaskDecompile(Side side, MCP instance, ProgressListener listener) {
 		super(side, instance, listener);
 	}
+	
+	public static String getSideName(Side side) {
+		if(side == Side.HMOD) {
+			return Side.SERVER.name;
+		}
+		return side.name;
+	}
 
 	public static Mappings getMappings(Path mappingsPath, ClassStorage storage, Side side) throws IOException {
 		if (!Files.exists(mappingsPath)) {
 			return null;
 		}
 		boolean joined = MappingUtil.readNamespaces(mappingsPath).contains("official");
-		Mappings mappings = MappingsIO.read(mappingsPath, joined ? "official" : side.name, "named");
+		Mappings mappings = MappingsIO.read(mappingsPath, joined ? "official" : getSideName(side), "named");
 		for (String name : storage.getAllClasses()) {
 			if (name.indexOf('/') == -1 && !mappings.classes.containsKey(name)) {
-				mappings.classes.put(name, "net/minecraft/src/" + name);
+				if(side != Side.HMOD) {
+					mappings.classes.put(name, "net/minecraft/src/" + name);
+				} else {
+					mappings.classes.put(name, "Hey0/mod/" + name);
+				}
 			}
 		}
 		return mappings;
@@ -146,10 +157,13 @@ public class TaskDecompile extends TaskStaged {
 				injector.stripLVT();
 				injector.addTransform(Transform::stripSignatures);
 			}
+			
+			
 			mappings = getMappings(mappingsPath, injector.getStorage(), side);
 			if (mappings != null) {
 				injector.applyMappings(mappings);
 			}
+			
 		}
 		injector.addTransform(Transform::decomposeVars);
 		injector.addTransform(Transform::replaceCommonConstants);

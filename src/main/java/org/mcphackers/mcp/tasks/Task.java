@@ -101,7 +101,7 @@ public abstract class Task implements ProgressListener, TaskRunnable {
 		MERGED(2, "merged"),
 		HMOD(3, "mod");
 
-		public static final Side[] ALL = {CLIENT, SERVER, MERGED};
+		public static final Side[] ALL = {CLIENT, SERVER, MERGED, HMOD};
 		public static final Side[] VALUES = Side.values();
 
 		public final int index;

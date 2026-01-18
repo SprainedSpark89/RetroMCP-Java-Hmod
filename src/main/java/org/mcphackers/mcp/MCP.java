@@ -97,7 +97,7 @@ public abstract class MCP {
 			if (task.side == side || task.side == Side.ANY) {
 				performedTasks.add(task);
 			} else if (side == Side.ANY) {
-				if (task.side == Side.SERVER || task.side == Side.CLIENT) {
+				if (task.side == Side.SERVER || task.side == Side.CLIENT || task.side == Side.HMOD) {
 					if (mode.requirement == null || mode.requirement.get(this, task.side)) {
 						performedTasks.add(task);
 					}
